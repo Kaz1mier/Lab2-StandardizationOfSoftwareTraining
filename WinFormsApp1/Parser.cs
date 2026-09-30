@@ -67,7 +67,6 @@ namespace WinFormsApp1
             int currentDepth = 0;
             int maxDepth = 0;
 
-            // --- 1. РАСЧЕТ ВЕТВЛЕНИЙ И МЕТРИК ДЖИЛБА ---
             for (int i = 0; i < rawLines.Length; i++)
             {
                 string line = rawLines[i].Trim();
@@ -118,21 +117,17 @@ namespace WinFormsApp1
                 }
             }
 
-            // --- 2. ПОДГОТОВКА ТЕКСТА ---
             string workText = cleanCode;
 
-            // Исключаем объявленяи package и import
             workText = Regex.Replace(workText, @"\bpackage\s+[A-Za-z_]\w*", " ");
             workText = Regex.Replace(workText, @"\bimport\s*\((?:[^()]*|\([^()]*\))*\)", " ");
             workText = Regex.Replace(workText, @"\bimport\s+""[^""]*""", " ");
 
-            // Исключаем объявленя функций и строковые литералы
             workText = Regex.Replace(workText, @"\bfunc\s+[A-Za-z_]\w*\s*\([^)]*\)(?:\s*[A-Za-z_]\w*)?\s*", " ");
             workText = Regex.Replace(workText, @"""[^""]*""|'[^']+'", " ");
 
             var ops = new Dictionary<string, int>();
 
-            // --- 3. ИСПОЛНЯЕМЫЕ КЛЮЧЕВЫЕ СЛОВА (без switch и default) ---
             string[] executableKeywords = { "if", "else", "for", "return", "case", "continue", "break", "range", "go", "defer"};
             foreach (var kw in executableKeywords)
             {
@@ -140,7 +135,6 @@ namespace WinFormsApp1
                 if (count > 0) ops[kw] = count;
             }
 
-            // --- 4. СОСТАВНЫЕ И СИМВОЛЬНЫЕ ОПЕРАТОРЫ ---
             var compoundOps = new (string sym, string pattern)[]
             {
                 (":=", @":="),
@@ -188,7 +182,6 @@ namespace WinFormsApp1
                 if (c > 0) ops[sym] = c;
             }
 
-            // --- 5. ВЫЗОВЫ ФУНКЦИЙ КАК ОПЕРАТОРЫ ---
             var fnMatches = Regex.Matches(workText, @"\b(?<name>[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\s*\(");
             HashSet<string> controlKeywords = new HashSet<string> { "if", "for", "switch"};
 
@@ -201,7 +194,6 @@ namespace WinFormsApp1
                 ops[fnOperator] = ops.GetValueOrDefault(fnOperator, 0) + 1;
             }
 
-            // --- 6. ИТОГИ ---
             int totalStatements = ops.Values.Sum();
             double relativeCl = totalStatements > 0 ? (double)cl / totalStatements : 0;
 
