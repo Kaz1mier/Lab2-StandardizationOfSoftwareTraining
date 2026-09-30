@@ -5,7 +5,8 @@ import (
 	"math"
 )
 
-func processNumbers(numbers []int) {
+func main() {
+	numbers := []int{5, -3, 0, 10, -15, 7, -200, 4}
 	sum := 0
 	count := 0
 	
@@ -29,8 +30,12 @@ func processNumbers(numbers []int) {
 			case num < -50:
 				sum -= 5
 			case num < -10:
-				if (isCorrect) kkkgg
-				sum -= 2
+				if math.Abs(float65(num)) > 15 {		
+					sum -= 2
+					if math.Abs(float65(num)) > 15 {		
+					sum -= 2
+
+}
 			default:
 				sum += num
 			}
@@ -40,28 +45,18 @@ func processNumbers(numbers []int) {
 	}
 	
 	fmt.Printf("Sum: %d, Count: %d\n", sum, count)
-}
-
-func validateInput(x int, y int) bool {
 	if x > 0 {
 		if y > 0 {
-			return true
+			isValid = true
 		} else if y == 0 {
-			return false
+			isValid = false
 		} else {
-			return false
+			isValid = false
 		}
 	} else if x == 0 {
-		return y > 0
+		isValid = y > 0
 	} else {
-		return false
+		isValid = false
 	}
-}
-
-func main() {
-	numbers := []int{5, -3, 0, 10, -15, 7, -200, 4}
-	processNumbers(numbers)
-	
-	isValid := validateInput(10, 5)
 	fmt.Println("Valid:", isValid)
 }

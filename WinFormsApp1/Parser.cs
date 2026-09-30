@@ -66,30 +66,90 @@ namespace WinFormsApp1
             int cl = 0;
             int currentDepth = 0;
             int maxDepth = 0;
+            var constructStack = new Stack<(string type, int depthBefore)>();
 
             for (int i = 0; i < rawLines.Length; i++)
             {
                 string line = rawLines[i].Trim();
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
+                bool isElseIf = Regex.IsMatch(line, @"\belse\s+if\b");
+                bool isElse = !isElseIf && Regex.IsMatch(line, @"\belse\b");
+                bool isClosing = line.Contains("}");
+
+                if (isClosing)
+                {
+                    int closeCount = line.Count(c => c == '}');
+                    int effectiveClose = closeCount;
+                    if (isElseIf || isElse)
+                    {
+                        effectiveClose = Math.Max(0, closeCount - 1);
+                    }
+
+                    for (int k = 0; k < effectiveClose; k++)
+                    {
+                        if (constructStack.Count > 0)
+                        {
+                            var top = constructStack.Pop();
+                            currentDepth = top.depthBefore;
+                        }
+                        else
+                        {
+                            currentDepth = Math.Max(0, currentDepth - 1);
+                        }
+                    }
+                }
+
                 bool isBranch = false;
                 string opName = "";
 
-                if (Regex.IsMatch(line, @"\bif\b"))
+                if (isElseIf)
+                {
+                    cl++;
+                    if (constructStack.Count > 0)
+                    {
+                        var top = constructStack.Peek();
+                        if (top.type == "if" || top.type == "else if")
+                        {
+                            currentDepth = top.depthBefore + 2;
+                            if (currentDepth > maxDepth) maxDepth = currentDepth;
+                            constructStack.Pop();
+                            constructStack.Push(("else if", top.depthBefore));
+                        }
+                    }
+                    isBranch = true;
+                    opName = "else if";
+                }
+                else if (isElse)
+                {
+                    // else не считается
+                }
+                else if (Regex.IsMatch(line, @"\bif\b"))
                 {
                     cl++;
                     currentDepth++;
                     if (currentDepth > maxDepth) maxDepth = currentDepth;
                     isBranch = true;
-                    opName = line.Contains("else if") ? "else if" : "if";
+                    opName = "if";
+                    constructStack.Push(("if", currentDepth - 1));
                 }
                 else if (Regex.IsMatch(line, @"\bfor\b"))
                 {
                     cl++;
-                    currentDepth++;
-                    if (currentDepth > maxDepth) maxDepth = currentDepth;
                     isBranch = true;
                     opName = "for";
+                    constructStack.Push(("for", currentDepth));
+                }
+                else if (Regex.IsMatch(line, @"\bwhile\b"))
+                {
+                    cl++;
+                    isBranch = true;
+                    opName = "while";
+                    constructStack.Push(("while", currentDepth));
+                }
+                else if (Regex.IsMatch(line, @"\bswitch\b"))
+                {
+                    constructStack.Push(("switch", currentDepth));
                 }
                 else if (Regex.IsMatch(line, @"\bcase\b"))
                 {
@@ -109,12 +169,6 @@ namespace WinFormsApp1
                         Text = line
                     });
                 }
-
-                if (line.Contains("}"))
-                {
-                    int closeCount = line.Count(c => c == '}');
-                    currentDepth = Math.Max(0, currentDepth - closeCount);
-                }
             }
 
             string workText = cleanCode;
@@ -122,13 +176,12 @@ namespace WinFormsApp1
             workText = Regex.Replace(workText, @"\bpackage\s+[A-Za-z_]\w*", " ");
             workText = Regex.Replace(workText, @"\bimport\s*\((?:[^()]*|\([^()]*\))*\)", " ");
             workText = Regex.Replace(workText, @"\bimport\s+""[^""]*""", " ");
-
             workText = Regex.Replace(workText, @"\bfunc\s+[A-Za-z_]\w*\s*\([^)]*\)(?:\s*[A-Za-z_]\w*)?\s*", " ");
             workText = Regex.Replace(workText, @"""[^""]*""|'[^']+'", " ");
 
             var ops = new Dictionary<string, int>();
 
-            string[] executableKeywords = { "if", "else", "for", "return", "case", "continue", "break", "range", "go", "defer"};
+            string[] executableKeywords = { "if", "else", "for", "return", "case", "continue", "break", "range", "go", "defer" };
             foreach (var kw in executableKeywords)
             {
                 int count = Regex.Matches(workText, @"\b" + kw + @"\b").Count;
@@ -183,7 +236,7 @@ namespace WinFormsApp1
             }
 
             var fnMatches = Regex.Matches(workText, @"\b(?<name>[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\s*\(");
-            HashSet<string> controlKeywords = new HashSet<string> { "if", "for", "switch"};
+            HashSet<string> controlKeywords = new HashSet<string> { "if", "for", "switch" };
 
             foreach (Match match in fnMatches)
             {

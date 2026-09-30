@@ -1,0 +1,59 @@
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func main() {
+	numbers := []int{5, -3, 0, 10, -15, 7, -200, 4}
+	sum := 0
+	count := 0
+	
+	for i := 0; i < len(numbers); i++ {
+		num := numbers[i]
+		
+		if num > 0 {
+			if num%2 == 0 {
+				sum += num
+				count++
+			} else if num%3 == 0 {
+				sum += num * 2
+				count++
+			} else {
+				sum += num / 2
+			}
+		} else if num < 0 {
+			switch {
+			case num < -100:
+				sum -= 10
+			case num < -50:
+				sum -= 5
+			case num < -10:
+				if math.Abs(float64(num)) > 15 {
+					sum -= 2
+				}
+			default:
+				sum += num
+			}
+		} else {
+			count++
+		}
+	}
+	
+	fmt.Printf("Sum: %d, Count: %d\n", sum, count)
+	if x > 0 {
+		if y > 0 {
+			isValid = true
+		} else if y == 0 {
+			isValid = false
+		} else {
+			isValid = false
+		}
+	} else if x == 0 {
+		isValid = y > 0
+	} else {
+		isValid = false
+	}
+	fmt.Println("Valid:", isValid)
+}
